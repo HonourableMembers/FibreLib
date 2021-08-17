@@ -8,7 +8,6 @@ namespace FibreLib
     {
         List<Home> HomeList = new List<Home>();
         public int ListSize { get => HomeList.Count; }
-        public int searchIndex = 0;
 
         public void addHome(string id, string address, string owner, string fibreProvider, bool isCovered, int speed, string isp)
         {
@@ -17,16 +16,22 @@ namespace FibreLib
 
         public void updateHome(int index, Home newHome)
         {
-            HomeList[index] = newHome;
+            HomeList[index].ID = newHome.ID;
+            HomeList[index].Address = newHome.Address;
+            HomeList[index].Owner = newHome.Owner;
+            HomeList[index].FibreProvider = newHome.FibreProvider;
+            HomeList[index].Speed = newHome.Speed;
+            HomeList[index].IsCovered = newHome.IsCovered;
+            HomeList[index].Isp = newHome.Isp;
         }
 
-        public List<string> stringList()
+        public List<string> idList()
         {
             List<string> output = new List<string>();
 
             for (int i = 0; i < ListSize; i++)
             {
-                output.Add(HomeList[i].ID);
+                output.Add(HomeList[i].ID + " | " + HomeList[i].Owner);
             }
 
             return output;
@@ -34,8 +39,26 @@ namespace FibreLib
 
         public void delHome(Home temp)
         {
-            Home find = search(temp.ID);
-            HomeList.RemoveAt(searchIndex);
+            int i = this.getIndex(temp);
+            HomeList.RemoveAt(i);
+        }
+
+        public Home getHome(int homeIndex)
+        {
+            return HomeList[homeIndex];
+        }
+
+        public int getIndex(Home home)
+        {
+            for (int i = 0; i < ListSize; i++)
+            {
+                if (home.ID == HomeList[i].ID)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         public Home search(string ID)
@@ -47,17 +70,11 @@ namespace FibreLib
                 Home temp = HomeList[i];
                 if (temp.ID == ID)
                 {
-                    searchIndex = i;
                     toReturn = temp;
                 }
             }
 
             return toReturn;
-        }
-
-        public Home getHome(int index)
-        {
-            return HomeList[index];
         }
 
         public void toTextFile()
@@ -104,15 +121,27 @@ namespace FibreLib
 
         public bool validID(dynamic test)
         {
-            try
+            string strTest = test;
+            if (strTest.Length == 13)
             {
-                int testID = Convert.ToInt32(test);
-                return validString(test);
+                for (int i = 0; i < strTest.Length; i++)
+                {
+                    try
+                    {
+                        int x = Convert.ToInt32(strTest[i]);
+                    }
+                    catch (Exception)
+                    {
+                        return false;
+                    }
+                }
             }
-            catch (Exception)
+            else
             {
                 return false;
             }
+            
+            return true;
         }
         
         public bool validAddress(dynamic test)
