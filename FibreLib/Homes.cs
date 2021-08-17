@@ -8,7 +8,7 @@ namespace FibreLib
     {
         List<Home> HomeList = new List<Home>();
         public int ListSize { get => HomeList.Count; }
-        private int searchIndex = 0;
+        public int searchIndex = 0;
 
         public void addHome(string id, string address, string owner, string fibreProvider, bool isCovered, int speed, string isp)
         {
@@ -47,6 +47,7 @@ namespace FibreLib
                 Home temp = HomeList[i];
                 if (temp.ID == ID)
                 {
+                    searchIndex = i;
                     toReturn = temp;
                 }
             }
@@ -86,5 +87,79 @@ namespace FibreLib
                 HomeList = newList;
             }
         }
+
+        #region Field Validation
+        public bool validString(string test)
+        {
+            bool notNull = (test != null);
+            bool notEmpty = (test != "");
+
+            if (notEmpty && notNull)
+            {
+                string strTest = test;
+                return true;
+            }
+            return false;
+        }
+
+        public bool validID(dynamic test)
+        {
+            try
+            {
+                int testID = Convert.ToInt32(test);
+                return validString(test);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        
+        public bool validAddress(dynamic test)
+        {
+            return validString(test);
+        }
+
+        public bool validName(dynamic test)
+        {
+            return validString(test);
+        }
+
+        public bool validProvider(dynamic test)
+        {
+            return validString(test);
+        }
+
+        public bool validBool(dynamic test)
+        {
+            try
+            {
+                bool bTest = Convert.ToBoolean(test);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool validSpeed(dynamic test)
+        {
+            try
+            {
+                int iTest = Convert.ToInt32(test);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool validIsp(dynamic test)
+        {
+            return validString(test);
+        }
+        #endregion
     }
 }
