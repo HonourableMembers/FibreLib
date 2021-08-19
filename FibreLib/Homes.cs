@@ -146,10 +146,42 @@ namespace FibreLib
 
         public void dbToList(SqlConnection conn, string TBL_Name)
         {
+            HomeList = new List<Home>();
+
             conn.Open();
 
             string sql = "SELECT *" +
                 $"FROM {TBL_Name};";
+
+            using (SqlCommand command = new SqlCommand(sql, conn))
+            {
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string id = reader.GetString(0);
+                        string address = reader.GetString(1);
+                        string owner = reader.GetString(2);
+                        string fibreProv = reader.GetString(3);
+                        bool isCovered = reader.GetBoolean(4);
+                        int speed = reader.GetInt32(5);
+                        string isp = reader.GetString(6);
+
+                        addHome(id, address, owner, fibreProv, isCovered, speed, isp);
+                    }
+                }
+            }
+
+            conn.Close();
+        } //Works
+
+        public void dbToList(SqlConnection conn, string TBL_Name, string SQL)
+        {
+            HomeList = new List<Home>();
+
+            conn.Open();
+
+            string sql = SQL;
 
             using (SqlCommand command = new SqlCommand(sql, conn))
             {
@@ -212,7 +244,7 @@ namespace FibreLib
             }
 
             conn.Close();
-        } //WIP
+        } //Works
 
         public void runSQL(string SQL, SqlConnection conn)
         {
