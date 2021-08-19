@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.IO;
 
 namespace FibreLib
@@ -9,6 +10,7 @@ namespace FibreLib
         List<Home> HomeList = new List<Home>();
         public int ListSize { get => HomeList.Count; }
 
+        #region List Management
         public void addHome(string id, string address, string owner, string fibreProvider, bool isCovered, int speed, string isp)
         {
             HomeList.Add(new Home(id, address, owner, fibreProvider, isCovered, speed, isp));
@@ -76,9 +78,28 @@ namespace FibreLib
 
             return toReturn;
         }
+        #endregion
+
+        #region Text Files Managment
+        public string ExistsOrCreate(string fileName)
+        {
+            switch (File.Exists(fileName))
+            {
+                case true:
+                    return "exists";
+                case false:
+                    using (FileStream fs = File.Create(fileName))
+                    {
+                        fs.Close();
+                    }
+                    return "created";
+            }
+        }
 
         public void toTextFile()
         {
+            string txtFile = ExistsOrCreate("homes.txt");
+
             using (StreamWriter sw = new StreamWriter("homes.txt"))
             {
                 foreach (Home h in HomeList)
@@ -90,6 +111,8 @@ namespace FibreLib
 
         public void ReadText()
         {
+            string txtFile = ExistsOrCreate("homes.txt");
+
             List<Home> newList = new List<Home>();
             using (StreamReader sr = new StreamReader("homes.txt"))
             {
@@ -104,14 +127,107 @@ namespace FibreLib
                 HomeList = newList;
             }
         }
+        #endregion
+
+        #region Database Managment
+
+        public SqlConnection connectDB(string connString)
+        {
+            try
+            {
+                SqlConnection conn = new SqlConnection(connString);
+                return conn;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        } //Works
+
+        public void dbToList(SqlConnection conn, string TBL_Name)
+        {
+            conn.Open();
+
+            string sql = "SELECT *" +
+                $"FROM {TBL_Name};";
+
+            using (SqlCommand command = new SqlCommand(sql, conn))
+            {
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string id = reader.GetString(0);
+                        string address = reader.GetString(1);
+                        string owner = reader.GetString(2);
+                        string fibreProv = reader.GetString(3);
+                        bool isCovered = reader.GetBoolean(4);
+                        int speed = reader.GetInt32(5);
+                        string isp = reader.GetString(6);
+
+                        addHome(id, address, owner, fibreProv, isCovered, speed, isp);
+                    }
+                }
+            }
+
+            conn.Close();
+        } //Works
+
+        public void listToDB(SqlConnection conn, string TBL_Name)
+        {
+            conn.Open();
+
+            //Drop DB before rewriting
+            string dropSql = $"drop table {TBL_Name};";
+            runSQL(dropSql, conn);
+
+            //Create Tabel after dropping it
+            string createSql = $"create table {TBL_Name}(" +
+                "[ID] varchar(13) NOT NULL PRIMARY KEY," +
+                "[Address] varchar(255)," +
+                "[OwnerName] varchar(255)," +
+                "[FibreProvider] varchar(255)," +
+                "[IsCovered] bit," +
+                "[Speed] int," +
+                "[ISP] varchar(255)" +
+                ");";
+            runSQL(createSql, conn);
+
+            string insertSql = $"INSERT INTO {TBL_Name} VALUES(@ID, @Address, @OwnerName, @FibreProvider, @IsCovered, @Speed, @ISP);";
+
+            for (int i = 0; i < HomeList.Count; i++)
+            {
+                SqlCommand com = new SqlCommand(insertSql, conn);
+                //Load Record with Fields
+                com.Parameters.AddWithValue("@ID", HomeList[i].ID);
+                com.Parameters.AddWithValue("@Address", HomeList[i].Address);
+                com.Parameters.AddWithValue("@OwnerName", HomeList[i].Owner);
+                com.Parameters.AddWithValue("@FibreProvider", HomeList[i].FibreProvider);
+                com.Parameters.AddWithValue("@IsCovered", HomeList[i].IsCovered);
+                com.Parameters.AddWithValue("@Speed", HomeList[i].Speed);
+                com.Parameters.AddWithValue("@ISP", HomeList[i].Isp);
+
+                //Load Record into DB (Execute INSERT SQL)
+                com.ExecuteNonQuery();
+            }
+
+            conn.Close();
+        } //WIP
+
+        public void runSQL(string SQL, SqlConnection conn)
+        {
+            SqlCommand com = new SqlCommand(SQL, conn);
+            com.ExecuteNonQuery();
+        } //Works
+
+        #endregion
 
         #region Field Validation
         public bool validString(string test)
         {
-            bool notNull = (test != null);
-            bool notEmpty = (test != "");
+            bool isNullOrEmpty = String.IsNullOrWhiteSpace(test);
 
-            if (notEmpty && notNull)
+            if (!isNullOrEmpty)
             {
                 string strTest = test;
                 return true;
@@ -140,10 +256,10 @@ namespace FibreLib
             {
                 return false;
             }
-            
+
             return true;
         }
-        
+
         public bool validAddress(dynamic test)
         {
             return validString(test);
