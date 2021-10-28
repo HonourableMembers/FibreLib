@@ -144,6 +144,38 @@ namespace FibreLib
             }
         } //Works
 
+        public void updateHome(SqlConnection conn, string TBL_Name, Home home)
+        {
+            string updateSql =
+                $"UPDATE {TBL_Name} " +
+                $"SET Address='{home.Address}', OwnerName='{home.Owner}', FibreProvider='{home.FibreProvider}', IsCovered='{home.IsCovered}', Speed={home.Speed}, ISP='{home.Isp}' " +
+                $"WHERE ID='{home.ID}';";
+
+            conn.Open();
+            runSQL(updateSql, conn);
+            conn.Close();
+        }
+
+        public void addHome(SqlConnection conn, string TBL_Name, Home home)
+        {
+            string insertSql =
+                $"INSERT INTO {TBL_Name} " +
+                $"VALUES(@ID, @Address, @OwnerName, @FibreProvider, @IsCovered, @Speed, @ISP);";
+
+            SqlCommand comm = new SqlCommand(insertSql, conn);
+            comm.Parameters.AddWithValue("@ID", home.ID);
+            comm.Parameters.AddWithValue("@Address", home.Address);
+            comm.Parameters.AddWithValue("@OwnerName", home.Owner);
+            comm.Parameters.AddWithValue("@FibreProvider", home.FibreProvider);
+            comm.Parameters.AddWithValue("@IsCovered", home.IsCovered);
+            comm.Parameters.AddWithValue("@Speed", home.Speed);
+            comm.Parameters.AddWithValue("@ISP", home.Isp);
+
+            conn.Open();
+            comm.ExecuteNonQuery();
+            conn.Close();
+        }
+
         public void dbToList(SqlConnection conn, string TBL_Name)
         {
             HomeList = new List<Home>();
